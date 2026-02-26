@@ -6,9 +6,11 @@ import pytz
 
 # --- 1. CONFIG ---
 st.set_page_config(page_title="B&G Analytics", layout="wide", page_icon="📊")
-IST = pytz.timezone('Asia/Kolkata') # Fixed NameError by defining IST here
+# DEFINING IST HERE TO FIX THE NAMEERROR IN FOOTER
+IST = pytz.timezone('Asia/Kolkata') 
 
 # --- 2. RAW DATA LINKS ---
+# Ensure these point to the EXACT 'Raw' URL from your GitHub repositories
 PROD_RAW_URL = "https://raw.githubusercontent.com/Bgenggadmin/bg-production-master/main/production_logs.csv"
 LOGI_RAW_URL = "https://raw.githubusercontent.com/Bgenggadmin/bg-logistics-master/main/logistics_logs.csv"
 
@@ -18,10 +20,12 @@ st.title("📊 B&G Master Performance Analytics")
 @st.cache_data(ttl=60)
 def fetch_data(url):
     try:
+        # Fetching directly from the URL provided
         df = pd.read_csv(url)
         df['Timestamp'] = pd.to_datetime(df['Timestamp'])
         return df
-    except: 
+    except Exception as e:
+        # Returning an empty dataframe if the link fails
         return pd.DataFrame()
 
 df_prod = fetch_data(PROD_RAW_URL)
@@ -45,12 +49,18 @@ sc1, sc2, sc3, sc4 = st.columns(4)
 if not df_prod.empty:
     f_prod = df_prod[df_prod['Timestamp'] >= start_date]
     sc1.metric("Total Man-Hours", f"{f_prod['Hours'].sum():,.1f} Hrs")
-    sc2.metric("Total Units", f"{f_prod['Output'].sum():,.0f}")
+    sc2.metric("Total Units Produced", f"{f_prod['Output'].sum():,.0f}")
+else:
+    sc1.metric("Total Man-Hours", "0.0 Hrs")
+    sc2.metric("Total Units Produced", "0")
 
 if not df_logi.empty:
     f_logi = df_logi[df_logi['Timestamp'] >= start_date]
-    sc3.metric("Total KMs", f"{f_logi['Distance'].sum():,.1f} KM")
-    sc4.metric("Total Fuel", f"{f_logi['Fuel_Ltrs'].sum():,.1f} L")
+    sc3.metric("Total KMs Driven", f"{f_logi['Distance'].sum():,.1f} KM")
+    sc4.metric("Total Fuel Added", f"{f_logi['Fuel_Ltrs'].sum():,.1f} L")
+else:
+    sc3.metric("Total KMs Driven", "0.0 KM")
+    sc4.metric("Total Fuel Added", "0.0 L")
 
 st.divider()
 
@@ -59,7 +69,7 @@ st.header("⚙️ Production Efficiency")
 if not df_prod.empty:
     c1, c2 = st.columns(2)
     with c1:
-        st.subheader("🏗️ Jobwise Man-Hours")
+        st.subheader("🏗️ Jobwise Total Man-Hours")
         job_stats = f_prod.groupby("Job_Code")["Hours"].sum().reset_index()
         fig_job = px.bar(job_stats, x="Job_Code", y="Hours", text_auto=True, color_discrete_sequence=['#2E7D32'])
         st.plotly_chart(fig_job, use_container_width=True)
@@ -74,6 +84,8 @@ if not df_prod.empty:
 
     with st.expander("📋 View Detailed Production Table"):
         st.dataframe(f_prod.sort_values(by="Timestamp", ascending=False), use_container_width=True)
+else:
+    st.info("No production data found for this period. Check if the Production Log CSV is empty or the URL is incorrect.")
 
 # --- 7. LOGISTICS SECTION (Charts & Tables) ---
 st.divider()
@@ -96,5 +108,5 @@ if not df_logi.empty:
         display_logi = f_logi.drop(columns=["Photo"]) if "Photo" in f_logi.columns else f_logi
         st.dataframe(display_logi.sort_values(by="Timestamp", ascending=False), use_container_width=True)
 
-# Footer with fixed IST variable
+# FOOTER WITH CORRECTED TIMEZONE VARIABLE
 st.caption(f"Last updated: {datetime.now(IST).strftime('%Y-%m-%d %H:%M:%S')} IST")
