@@ -6,12 +6,11 @@ import pytz
 
 # --- 1. CONFIG ---
 st.set_page_config(page_title="B&G Analytics", layout="wide", page_icon="📊")
-# DEFINING IST HERE TO FIX THE NAMEERROR IN FOOTER
-IST = pytz.timezone('Asia/Kolkata') 
+IST = pytz.timezone('Asia/Kolkata') # This line fixes the NameError in your footer
 
-# --- 2. RAW DATA LINKS ---
-# Ensure these point to the EXACT 'Raw' URL from your GitHub repositories
-PROD_RAW_URL = "https://raw.githubusercontent.com/Bgenggadmin/bg-production-master/main/production_logs.csv"
+# --- 2. UPDATED RAW DATA LINKS ---
+# Using the confirmed repository name from your tabs
+PROD_RAW_URL = "https://raw.githubusercontent.com/Bgenggadmin/shopfloor-monitor/main/production_logs.csv"
 LOGI_RAW_URL = "https://raw.githubusercontent.com/Bgenggadmin/bg-logistics-master/main/logistics_logs.csv"
 
 st.title("📊 B&G Master Performance Analytics")
