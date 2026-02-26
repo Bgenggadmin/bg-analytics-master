@@ -2,19 +2,20 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
+import pytz
 
 # --- 1. CONFIG ---
 st.set_page_config(page_title="B&G Analytics", layout="wide", page_icon="📊")
+IST = pytz.timezone('Asia/Kolkata') # Fixed NameError by defining IST here
 
 # --- 2. RAW DATA LINKS ---
-# Ensure these point to the RAW versions of your CSV files on GitHub
 PROD_RAW_URL = "https://raw.githubusercontent.com/Bgenggadmin/bg-production-master/main/production_logs.csv"
 LOGI_RAW_URL = "https://raw.githubusercontent.com/Bgenggadmin/bg-logistics-master/main/logistics_logs.csv"
 
 st.title("📊 B&G Master Performance Analytics")
 
 # --- 3. DATA FETCHING ---
-@st.cache_data(ttl=60) # Refreshes every 60 seconds
+@st.cache_data(ttl=60)
 def fetch_data(url):
     try:
         df = pd.read_csv(url)
@@ -43,17 +44,13 @@ sc1, sc2, sc3, sc4 = st.columns(4)
 
 if not df_prod.empty:
     f_prod = df_prod[df_prod['Timestamp'] >= start_date]
-    total_hrs = f_prod['Hours'].sum()
-    total_out = f_prod['Output'].sum()
-    sc1.metric("Total Man-Hours", f"{total_hrs:,.1f} Hrs")
-    sc2.metric("Total Units Produced", f"{total_out:,.0f}")
+    sc1.metric("Total Man-Hours", f"{f_prod['Hours'].sum():,.1f} Hrs")
+    sc2.metric("Total Units", f"{f_prod['Output'].sum():,.0f}")
 
 if not df_logi.empty:
     f_logi = df_logi[df_logi['Timestamp'] >= start_date]
-    total_km = f_logi['Distance'].sum()
-    total_fuel = f_logi['Fuel_Ltrs'].sum()
-    sc3.metric("Total KMs Driven", f"{total_km:,.1f} KM")
-    sc4.metric("Total Fuel Added", f"{total_fuel:,.1f} L")
+    sc3.metric("Total KMs", f"{f_logi['Distance'].sum():,.1f} KM")
+    sc4.metric("Total Fuel", f"{f_logi['Fuel_Ltrs'].sum():,.1f} L")
 
 st.divider()
 
@@ -96,10 +93,8 @@ if not df_logi.empty:
         st.plotly_chart(fig_fuel, use_container_width=True)
 
     with st.expander("📋 View Detailed Logistics Table"):
-        # Removing Photo column for a cleaner mobile table
         display_logi = f_logi.drop(columns=["Photo"]) if "Photo" in f_logi.columns else f_logi
         st.dataframe(display_logi.sort_values(by="Timestamp", ascending=False), use_container_width=True)
-else:
-    st.info("No logistics data found for this period.")
 
+# Footer with fixed IST variable
 st.caption(f"Last updated: {datetime.now(IST).strftime('%Y-%m-%d %H:%M:%S')} IST")
